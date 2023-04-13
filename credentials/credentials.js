@@ -352,6 +352,7 @@ class Credentials {
             imageAlt: 'Sid Login',
             input: 'text',
             inputPlaceholder: 'https://es1.darkorbit.com/?dosid=c21cf6377518dd6e93450c6085a548b1',
+            inputValue: 'https://int14.darkorbit.com/?dosid=84c5hi39cs02ecjb6tudi9kif3',
             inputAttributes: {
                 maxlength: 100,
                 autocapitalize: 'off',

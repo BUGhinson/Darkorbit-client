@@ -1,4 +1,4 @@
-const { BrowserWindow, nativeTheme, Tray, Menu } = require("electron");
+const { BrowserWindow, nativeTheme, Tray, Menu, clipboard} = require("electron");
 const settings = require("electron-settings");
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
@@ -76,21 +76,54 @@ function tray(client) {
         },
         {
             label: "Copy SID",
-            click: () => {
+            click: async () => {
+
                 for(let win of BrowserWindow.getAllWindows()) {
-                    if (new URL(win.webContents.getURL()).hostname.search("darkorbit") != -1) {
-                        win.webContents.executeJavaScript("(typeof SID != 'undefined' && typeof SID == 'string') ? " +
-                            "(alert(`SID : ${SID.replace('dosid=', '')}\nCopied to clipboard`), SID.replace('dosid=', '')) : " +
-                            "(alert(`SID not detected`), null)")
-                            .then( (result) => {
-                                if (result) {
-                                    const {clipboard} = require('electron');
-                                    clipboard.writeText(result);
-                                }
-                            });
+                    let hostname = new URL(win.webContents.getURL()).hostname;
+                    /**
+                     * Check if url is darkorbit and not www ( meaning not logged in )
+                     */
+                    if ( hostname.search("darkorbit") != -1 && hostname.search("www.darkorbit.com") == -1){
+                        let cookie = await  win.webContents.session.cookies.get({name:'dosid', domain: hostname});
+                        if (cookie[0] && cookie[0].value ) {
+                            let SID = cookie[0].value;
+                            const {clipboard} = require('electron');
+                            clipboard.writeText(SID);
+                            win.webContents.executeJavaScript("alert(`SID: " + SID +"\nCopied to clipboard` )")
+                                .catch(error => {
+                                    /**
+                                     * uncomment if window should be shown to user
+                                     */
+                                    // win.webContents.executeJavaScript("alert('Error detecting SID')");
+                                    console.error(error);
+
+                                });
+
+                        } else {
+                            win.webContents.executeJavaScript("alert(`SID.. not detected!\nCookie not found !!!`)")
+                                .catch(error => {
+                                    /**
+                                     * uncomment if window should be shown to user
+                                     */
+                                    // win.webContents.executeJavaScript("alert('Error detecting SID')");
+                                    console.error(error);
+
+                                });
+                        }
                         break;
                     }
                 }
+                let win = BrowserWindow.getFocusedWindow();
+                win.webContents.executeJavaScript("alert(`SID.. not detected,\n NOT LOGED IN ???`)")
+                    .catch(error => {
+                        /**
+                         * uncomment if window should be shown to user
+                         */
+                        // win.webContents.executeJavaScript("alert('Error detecting SID')");
+                        console.error(error);
+
+                    });
+
             }
         },
         {
